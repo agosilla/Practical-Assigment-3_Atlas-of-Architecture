@@ -3,9 +3,9 @@ const detail = document.querySelector("#project-detail");
 const count = document.querySelector("#collection-count");
 const detailPosition = document.querySelector("#detail-position");
 const suggestionForm = document.querySelector("#suggestionForm");
-const thankYou = document.querySelector("#thankYou");
 const themeButton = document.querySelector("#theme-toggle");
 let projects = [];
+let totalProjects = 0;
 let currentProjectIndex = 0;
 let darkMode = false;
 
@@ -14,28 +14,32 @@ fetch("js/projects.json")
   .then(data => {
     projects = data;
     let cardsHTML = "";
+    let cardIndex = 0;
 
-    projects.forEach((project, index) => {
+    projects.forEach(project => {
       cardsHTML += `
-        <article class="col">
-          <button class="project-card" type="button" onclick="showProject(${index})">
+        <div class="col">
+          <a class="project-card" href="#detail" onclick="showProject(${cardIndex})">
             <span class="card-image-wrap">
               <img src="${project.image}" alt="${project.title}" class="img-fluid object-fit-contain">
             </span>
             <span class="project-card-body">
-              <span class="card-eyebrow"><span class="card-index">${index + 1}</span><span class="project-type">${project.type}</span></span>
+              <span class="card-eyebrow"><span class="card-index">${cardIndex + 1}</span><span class="project-type">${project.type}</span></span>
               <span class="project-card-title">${project.title}</span>
-              <span class="project-card-meta"><span>${project.city} / ${project.year}</span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></span>
+              <span class="project-card-meta"><span>${project.city} / ${project.year}</span><i class="bi bi-arrow-down-right"></i></span>
             </span>
-          </button>
-        </article>`;
+          </a>
+        </div>`;
+      cardIndex = cardIndex + 1;
     });
 
+    totalProjects = cardIndex;
     grid.innerHTML = cardsHTML;
-    count.innerHTML = projects.length + " projects in the archive";
-    document.querySelector("#hero-project-count").innerHTML = projects.length;
+    count.innerHTML = totalProjects + " projects in the archive";
+    document.querySelector("#hero-project-count").innerHTML = totalProjects;
     showProject(0);
   })
+
   .catch(error => {
     grid.innerHTML = "<p>The JSON file could not be loaded. Open the project with Live Server.</p>";
   });
@@ -45,7 +49,11 @@ function showProject(index) {
   currentProjectIndex = index;
   let photoCreditHTML = "";
   if (project.photographer) {
-    photoCreditHTML = `<p class="photo-credit">${project.imageCreditLabel || "Photo"}: ${project.photographer}</p>`;
+    let imageCreditLabel = "Photo";
+    if (project.imageCreditLabel) {
+      imageCreditLabel = project.imageCreditLabel;
+    }
+    photoCreditHTML = `<p class="photo-credit">${imageCreditLabel}: ${project.photographer}</p>`;
   }
 
   detail.innerHTML = `
@@ -64,38 +72,42 @@ function showProject(index) {
           <p class="feature-description">${project.description}</p>
           <p class="project-fact"><strong>Architecture:</strong> ${project.architect}</p>
           <a class="btn btn-primary" href="${project.destination}" target="_blank">Read about the project</a>
-          <a class="map-link" href="${project.map}" target="_blank"><i class="bi bi-geo-alt" aria-hidden="true"></i> Open map</a>
+          <a class="map-link" href="${project.map}" target="_blank"><i class="bi bi-geo-alt"></i> Open map</a>
         </div>
       </div>
     </div>`;
 
-  detailPosition.innerHTML = (currentProjectIndex + 1) + " / " + projects.length;
+  detailPosition.innerHTML = (currentProjectIndex + 1) + " / " + totalProjects;
 }
 
 function previousProject() {
-  if (currentProjectIndex === 0) {
-    showProject(projects.length - 1);
-  } else {
-    showProject(currentProjectIndex - 1);
+  let previousIndex = currentProjectIndex - 1;
+  if (!currentProjectIndex) {
+    previousIndex = totalProjects - 1;
   }
+  showProject(previousIndex);
 }
 
 function nextProject() {
-  if (currentProjectIndex === projects.length - 1) {
-    showProject(0);
-  } else {
-    showProject(currentProjectIndex + 1);
+  let nextIndex = currentProjectIndex + 1;
+  if (!projects[nextIndex]) {
+    nextIndex = 0;
   }
+  showProject(nextIndex);
 }
 
 function changeTheme() {
-  if (darkMode === false) {
+  let previousTheme = darkMode;
+
+  if (!previousTheme) {
     document.querySelector("body").classList.add("theme-dark");
-    themeButton.innerHTML = '<i class="bi bi-sun" aria-hidden="true"></i><span>Light mode</span>';
+    themeButton.innerHTML = '<i class="bi bi-sun"></i><span>Light mode</span>';
     darkMode = true;
-  } else {
+  }
+
+  if (previousTheme) {
     document.querySelector("body").classList.remove("theme-dark");
-    themeButton.innerHTML = '<i class="bi bi-moon-stars" aria-hidden="true"></i><span>Dark mode</span>';
+    themeButton.innerHTML = '<i class="bi bi-moon-stars"></i><span>Dark mode</span>';
     darkMode = false;
   }
 }
@@ -106,12 +118,12 @@ suggestionForm.addEventListener("submit", function (event) {
   if (!suggestionForm.checkValidity()) {
     event.stopPropagation();
     suggestionForm.classList.add("was-validated");
-    return;
   }
 
-  suggestionForm.classList.add("was-validated");
-  suggestionForm.classList.add("d-none");
-  thankYou.classList.remove("d-none");
+  if (suggestionForm.checkValidity()) {
+    suggestionForm.classList.add("was-validated");
+    suggestionForm.innerHTML = '<div class="form-success">Thank you for your suggestion!</div>';
+  }
 });
 
 
